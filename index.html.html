@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sahamati Live — YouTube × DPDP · Dual-Phone Consent Simulator (with Edge-Case Lab)</title>
+<style>
+  :root{
+    --ink:#101b23; --ink2:#1c2c37; --ink3:#263a47; --teal:#0e7c7b; --teald:#0a5c5b;
+    --tint:#eaf4f3; --tint2:#f4f9f8; --red:#e62117; --gold:#e8a33d; --goldt:#fbf3e4;
+    --mut:#5b6b75; --txt:#1e2a32; --line:#dde7e6; --ok:#1c7a3d; --okt:#e7f6ec;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif}
+  body{background:var(--ink);min-height:100vh;color:#c9d6dc}
+
+  .top{max-width:1300px;margin:0 auto;padding:20px 24px 8px;display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+  .top .kick{font-size:10px;letter-spacing:3px;color:#7fc8c7;font-weight:700}
+  .top h1{font-family:Cambria,Georgia,serif;color:#fff;font-size:26px;line-height:1.05}
+  .top .tag{font-size:12px;color:#8ea3ad;max-width:560px;line-height:1.45}
+  .lifebar{max-width:1300px;margin:8px auto 0;padding:0 24px;display:flex;gap:6px;flex-wrap:wrap}
+  .life{font-size:10px;font-weight:700;letter-spacing:.5px;padding:5px 10px;border-radius:16px;background:var(--ink2);color:#68808c;display:flex;gap:6px;align-items:center;transition:all .3s}
+  .life .d{width:7px;height:7px;border-radius:50%;background:#3a4f5c}
+  .life.now{background:var(--teal);color:#fff}
+  .life.now .d{background:#fff;animation:pulse 1.2s infinite}
+  .life.done{background:var(--ink3);color:#9fdbda}
+  .life.done .d{background:#2fa8a6}
+  @keyframes pulse{50%{opacity:.35}}
+
+  .guide{max-width:1300px;margin:10px auto 0;padding:0 24px}
+  .guide .inner{background:linear-gradient(90deg,#0e7c7b22,transparent);border:1px solid #0e7c7b55;border-radius:12px;padding:9px 15px;font-size:13px;color:#d8ecEB;display:flex;gap:10px;align-items:center}
+  .guide .inner b{color:#fff}
+  .guide .hand{font-size:16px;animation:nudge 1.1s infinite}
+  @keyframes nudge{50%{transform:translateX(5px)}}
+
+  .stage{max-width:1300px;margin:14px auto;padding:0 24px 30px;display:grid;grid-template-columns:minmax(295px,355px) minmax(295px,355px) 1fr;gap:20px;align-items:start}
+  @media(max-width:1080px){.stage{grid-template-columns:1fr 1fr}.rightcol{grid-column:1/-1}}
+  @media(max-width:700px){.stage{grid-template-columns:1fr}}
+
+  .phonecol .who{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .phonecol .who .av{width:34px;height:34px;border-radius:50%;background:var(--ink2);display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid var(--teal)}
+  .phonecol .who .nm{font-size:13px;font-weight:700;color:#fff}
+  .phonecol .who .rl{font-size:10px;color:#7fc8c7;letter-spacing:1px;font-weight:700}
+  .heartbeat{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.4px;padding:4px 8px;border-radius:14px;background:var(--ink2);color:#9fdbda;border:1px solid #2b4250;text-align:right}
+  .heartbeat.offp{color:#ffb4ae;border-color:#5c2b28}
+
+  .phone{width:100%;max-width:355px;height:645px;background:#fff;border-radius:32px;border:9px solid #05090c;position:relative;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:115px;height:20px;background:#05090c;border-radius:0 0 13px 13px;z-index:60}
+  .scr{position:absolute;inset:0;background:#fff;display:none;flex-direction:column;overflow-y:auto;padding:36px 17px 16px}
+  .scr.on{display:flex;animation:fadein .3s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .ythead{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+  .ytlogo{display:flex;align-items:center;gap:5px;font-weight:700;font-size:15px;color:#0f0f0f;letter-spacing:-.4px}
+  .ytplay{width:25px;height:17px;background:var(--red);border-radius:4px;display:flex;align-items:center;justify-content:center}
+  .ytplay::after{content:'';border-left:6px solid #fff;border-top:4px solid transparent;border-bottom:4px solid transparent}
+  .chip{margin-left:auto;font-size:8.5px;font-weight:700;letter-spacing:.7px;padding:4px 8px;border-radius:14px;background:var(--tint);color:var(--teald)}
+  .chip.parent{background:#fdeee9;color:#b3542c}
+  .chip.samedev{background:#fbf3e4;color:#9a6b1f}
+
+  h2{font-family:Cambria,Georgia,serif;font-size:18.5px;color:var(--txt);margin:7px 0 4px}
+  .sub{font-size:11.5px;color:var(--mut);line-height:1.5;margin-bottom:9px}
+  .hindi{color:var(--teald);font-size:10.5px;display:block;margin-top:2px}
+  label{font-size:10.5px;font-weight:600;color:var(--txt);display:block;margin:8px 0 4px}
+  input[type=text],input[type=tel],input[type=date]{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;color:var(--txt);background:#fff}
+  input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+  .btn{width:100%;padding:11.5px;border:none;border-radius:22px;background:var(--teal);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px;transition:transform .12s,background .2s}
+  .btn:hover{background:var(--teald)} .btn:active{transform:scale(.97)}
+  .btn.ghost{background:var(--tint);color:var(--teald)}
+  .btn.warn{background:var(--goldt);color:#9a6b1f}
+  .btn.red{background:var(--red)}
+  .btn.small{padding:9px;font-size:11.5px;margin-top:8px}
+  .btn:focus-visible{outline:3px solid #0e7c7b55;outline-offset:2px}
+
+  .card{background:var(--tint2);border-radius:12px;padding:11px;margin:7px 0;border:1px solid var(--line)}
+  .card.hero{background:var(--tint);border:none}
+  .card.warn{background:var(--goldt);border:none}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;padding:4px 8px;border-radius:14px;margin:2px 2px 2px 0}
+  .badge.safe{background:var(--tint);color:var(--teald)}
+  .badge.ok{background:var(--okt);color:var(--ok)}
+  .badge.wait{background:var(--goldt);color:#9a6b1f}
+  .badge.err{background:#fceded;color:var(--red)}
+
+  .trow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .trow:last-child{border-bottom:none}
+  .trow .tt{font-size:12px;font-weight:600;color:var(--txt)}
+  .trow .td{font-size:10px;color:var(--mut);line-height:1.4;margin-top:1px}
+  .sw{position:relative;width:38px;height:21px;min-width:38px;border-radius:12px;background:#cfd8dc;cursor:pointer;transition:background .2s;border:none}
+  .sw.on{background:var(--teal)}
+  .sw::after{content:'';position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;background:#fff;transition:left .2s}
+  .sw.on::after{left:20px}
+  .sw.locked{background:#90a4ae;cursor:not-allowed;opacity:.7}
+  .locknote{font-size:9px;color:var(--red);font-weight:700;margin-top:2px}
+
+  .otp{display:flex;gap:7px;margin:7px 0 4px}
+  .otp input{width:42px;height:46px;text-align:center;font-size:17px;font-weight:700;border:1.5px solid var(--line);border-radius:9px}
+  .otp input.bad{border-color:var(--red);animation:shake .3s}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+  .lock{background:linear-gradient(160deg,#1c2c37,#101b23)!important;color:#fff;align-items:center;justify-content:flex-start;padding-top:62px!important}
+  .lock .time{font-size:40px;font-weight:200;letter-spacing:1px}
+  .lock .date{font-size:11.5px;color:#8ea3ad;margin-top:2px}
+  .notif{width:100%;background:#ffffffee;border-radius:13px;padding:11px;margin-top:22px;color:var(--txt);cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:drop .5s cubic-bezier(.2,1.4,.4,1);text-align:left}
+  @keyframes drop{from{transform:translateY(-40px);opacity:0}to{transform:none;opacity:1}}
+  .notif .nh{display:flex;gap:6px;align-items:center;font-size:9.5px;color:var(--mut);font-weight:700}
+  .notif .nt{font-size:12px;font-weight:700;margin-top:3px}
+  .notif .nd{font-size:10.5px;color:var(--mut);margin-top:2px;line-height:1.4}
+  .idlehint{margin-top:22px;font-size:10.5px;color:#5b6b75;text-align:center}
+
+  .wait-banner{background:var(--goldt);border-radius:11px;padding:9px 11px;font-size:10.5px;color:#9a6b1f;line-height:1.45;margin:7px 0}
+  .dots::after{content:'';animation:dots 1.4s steps(4,end) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+  .vidgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+  .vid{border-radius:10px;overflow:hidden;background:var(--tint2);border:1px solid var(--line)}
+  .vid .th{height:48px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .vid .vt{font-size:9px;font-weight:600;color:var(--txt);padding:5px 7px;line-height:1.3}
+
+  .checkanim{width:66px;height:66px;border-radius:50%;background:var(--tint);display:flex;align-items:center;justify-content:center;margin:14px auto 8px;font-size:30px;color:var(--teal);animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+  .confetti{position:absolute;top:0;left:0;right:0;height:0;pointer-events:none;z-index:70}
+  .cf{position:absolute;width:8px;height:8px;border-radius:2px;animation:fall 1.6s ease-in forwards}
+  @keyframes fall{to{transform:translateY(560px) rotate(360deg);opacity:0}}
+
+  .hubrow{display:flex;align-items:center;gap:9px;padding:9px 3px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:8px}
+  .hubrow:hover{background:var(--tint2)}
+  .hubic{width:31px;height:31px;min-width:31px;border-radius:50%;background:var(--tint);display:flex;align-items:center;justify-content:center;font-size:14px}
+  .hubt{font-size:12px;font-weight:600;color:var(--txt)}
+  .hubd{font-size:9.5px;color:var(--mut);margin-top:1px}
+  .chev{margin-left:auto;color:#b0bec5;font-size:15px}
+  .sla{background:var(--ink);color:#9fdbda;border-radius:11px;padding:9px 11px;font-size:10.5px;line-height:1.5;margin-top:8px}
+  .sla b{color:#fff}
+  .slatimer{font-variant-numeric:tabular-nums;font-weight:700;color:#fff}
+
+  .langchips{display:flex;gap:5px;margin:5px 0 2px;flex-wrap:wrap}
+  .lc{font-size:9.5px;font-weight:700;padding:4px 9px;border-radius:14px;border:1.5px solid var(--line);background:#fff;color:var(--mut);cursor:pointer}
+  .lc.on{background:var(--teald);color:#fff;border-color:var(--teald)}
+
+  .smstoast{position:absolute;left:11px;right:11px;top:40px;background:#101b23f0;color:#fff;border-radius:12px;padding:9px 12px;font-size:10.5px;z-index:80;box-shadow:0 10px 26px rgba(0,0,0,.4);animation:drop .4s;display:none}
+  .smstoast b{color:#9fdbda}
+  .handover{background:linear-gradient(160deg,#0a5c5b,#16232c)!important;color:#fff;align-items:center;justify-content:center;text-align:center}
+  .handover .big{font-size:52px;margin-bottom:10px;animation:nudge 1.2s infinite}
+  .handover h2{color:#fff}
+  .handover .sub{color:#c9e7e6}
+
+  /* ---------- right column ---------- */
+  .rightcol{min-width:0;display:flex;flex-direction:column;gap:16px}
+  .ledger{background:var(--ink2);border:1px solid #2b4250;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;max-height:430px}
+  .ledger .lh{padding:12px 15px;border-bottom:1px solid #2b4250;display:flex;align-items:center;gap:9px}
+  .ledger .lh .lt{font-size:12.5px;font-weight:700;color:#fff}
+  .ledger .lh .ls{font-size:9px;color:#68808c;letter-spacing:1.4px;font-weight:700}
+  .reclight{width:9px;height:9px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+  .lstats{display:flex;gap:7px;padding:9px 15px;border-bottom:1px solid #2b4250;flex-wrap:wrap}
+  .lstat{background:var(--ink3);border-radius:10px;padding:6px 10px;min-width:80px}
+  .lstat .n{font-size:15px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+  .lstat .l{font-size:8px;letter-spacing:1px;color:#7fa0ad;font-weight:700}
+  .lstat .n.okc{color:#5ec4c2}
+  .lbody{overflow-y:auto;padding:7px 11px;flex:1}
+  .lempty{font-size:11px;color:#5b6b75;padding:15px 8px;line-height:1.6}
+  .lentry{display:flex;gap:9px;padding:8px 5px;border-bottom:1px solid #22343f;animation:fadein .35s}
+  .lentry .lic{width:24px;height:24px;min-width:24px;border-radius:8px;background:var(--ink3);display:flex;align-items:center;justify-content:center;font-size:11px}
+  .lentry .lev{font-size:10.5px;font-weight:700;color:#dff1f0;letter-spacing:.3px}
+  .lentry .lde{font-size:9.5px;color:#7fa0ad;line-height:1.45;margin-top:1px}
+  .lentry .lts{margin-left:auto;text-align:right;font-size:8.5px;color:#546b77;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .lentry .lhash{font-size:7.5px;color:#3f5866;font-family:Consolas,monospace}
+  .lfoot{padding:9px 15px;border-top:1px solid #2b4250;font-size:9.5px;color:#68808c;line-height:1.5}
+
+  .lab{background:var(--ink2);border:1px solid #4a3b1e;border-radius:16px;overflow:hidden}
+  .lab .labh{padding:12px 15px;border-bottom:1px solid #4a3b1e;display:flex;align-items:center;gap:9px}
+  .lab .labh .lt{font-size:12.5px;font-weight:700;color:#fff}
+  .lab .labh .ls{font-size:9px;color:#a08148;letter-spacing:1.4px;font-weight:700}
+  .lab .score{margin-left:auto;font-size:12px;font-weight:800;color:var(--gold)}
+  .labitems{padding:8px 12px 12px}
+  .labi{display:flex;gap:9px;align-items:flex-start;padding:6px 4px;font-size:11px;color:#8ea3ad;line-height:1.4}
+  .labi .tick{width:17px;height:17px;min-width:17px;border-radius:50%;border:1.5px solid #4a5f6c;display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;margin-top:1px;transition:all .3s}
+  .labi.hit{color:#f4e3c2}
+  .labi.hit .tick{background:var(--gold);border-color:var(--gold);color:#101b23;font-weight:900}
+  .labi b{color:#c9d6dc}
+  .labi.hit b{color:#fff}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <div class="kick">DELIVERABLE 2 · CLICKABLE PROTOTYPE · YOUTUBE × DPDP ACT 2023</div>
+    <h1>Sahamati <span style="color:#7fc8c7">Live</span> — two phones, one consent</h1>
+  </div>
+  <div class="tag">Left: <b style="color:#fff">Aarav, 14</b> (child). Right: <b style="color:#fff">Priya</b> (mother, legal consent-giver). Every action writes to the regulator-grade <b style="color:#fff">Consent Ledger</b> — and the <b style="color:#F2CD88">Edge-Case Lab</b> below it tracks the 8 unhappy paths this product survives. Try to break it.</div>
+</div>
+
+<div class="lifebar" id="lifebar">
+  <div class="life" data-l="0"><span class="d"></span>SIGN-UP</div>
+  <div class="life" data-l="1"><span class="d"></span>PARENT VERIFY</div>
+  <div class="life" data-l="2"><span class="d"></span>CONSENT</div>
+  <div class="life" data-l="3"><span class="d"></span>RIGHTS IN ACTION</div>
+  <div class="life" data-l="4"><span class="d"></span>EXPIRY · 1 YR LATER</div>
+  <div class="life" data-l="5"><span class="d"></span>RENEWAL ✓</div>
+</div>
+
+<div class="guide"><div class="inner"><span class="hand">👉</span><span id="guidetext"></span></div></div>
+
+<div class="stage">
+  <!-- ================= CHILD PHONE ================= -->
+  <div class="phonecol">
+    <div class="who"><div class="av">🧒</div><div><div class="nm">Aarav's phone</div><div class="rl">CHILD · 14 · JAIPUR</div></div><div class="heartbeat" id="hbChild">DATA COLLECTION: NONE</div></div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="confetti" id="confetti"></div>
+
+      <!-- C1 signup -->
+      <section class="scr on" id="c1">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">SIGN UP</span></div>
+        <h2>Create your account</h2>
+        <p class="sub">Your date of birth decides your experience — we check it before anything else.<span class="hindi">जन्मतिथि से तय होगा आपका सही अनुभव।</span></p>
+        <label>Name</label><input type="text" id="inName" value="Aarav Sharma">
+        <label>Date of birth <span style="font-weight:400;color:var(--mut)">(try an adult year too!)</span></label><input type="date" id="inDob" value="2012-03-14">
+        <div class="card" id="ageCard" style="display:none">
+          <span class="badge safe">🛡 <span id="ageTxt"></span></span>
+          <p style="font-size:10.5px;color:var(--mut);margin-top:5px;line-height:1.5" id="ageDesc"></p>
+        </div>
+        <button class="btn" id="btnC1" onclick="c1next()">Check my age & continue →</button>
+      </section>
+
+      <!-- C1b ADULT PATH (edge: adult DOB / possible faked age) -->
+      <section class="scr" id="c1b">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">ADULT · SELF-CONSENT</span></div>
+        <h2>Your privacy choices</h2>
+        <p class="sub">You're 18+, so you consent for yourself — same plain language, same granular switches.</p>
+        <div class="card" style="padding:2px 11px">
+          <div class="trow"><div style="flex:1"><div class="tt">Watch & search history</div></div><button class="sw on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="trow"><div style="flex:1"><div class="tt">Personalised ads</div><div class="td">Allowed for adults — but OFF by default. Your call.</div></div><button class="sw" onclick="this.classList.toggle('on')"></button></div>
+        </div>
+        <div class="card warn"><p style="font-size:10.5px;line-height:1.5;color:#9a6b1f">🕵️ <b>Age-assurance runs quietly anyway.</b> If usage signals strongly suggest an under-18 typed an adult birthday (content mix, school-hour patterns), the account is <b>softly paused into Safe Mode</b> pending a quick age proof — no shaming, no deletion.</p></div>
+        <button class="btn" onclick="adultProceed()">Accept & continue →</button>
+        <button class="btn ghost small" onclick="edgeSuspicion()">🧪 Edge-Case Lab: simulate "minor-like signals detected"</button>
+        <button class="btn ghost small" onclick="restartToChild()">← I'm actually under 18 — restart honestly</button>
+      </section>
+
+      <!-- C2 parent number -->
+      <section class="scr" id="c2">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">AARAV · 14</span></div>
+        <h2>Ask your parent</h2>
+        <p class="sub">By law, a parent must approve before we process your data. Choose how:<span class="hindi">माता-पिता की अनुमति ज़रूरी है।</span></p>
+        <label>Parent / guardian mobile</label>
+        <input type="tel" id="inParent" value="+91 98220 43210">
+        <button class="btn" onclick="sendRequest()">Send request to their phone 📩</button>
+        <button class="btn warn" onclick="sameDevice()">🤝 We share this phone — hand it over instead</button>
+        <div class="card"><span class="badge safe">▶ Safe Mode starts now</span>
+          <p style="font-size:10.5px;color:var(--mut);margin-top:5px;line-height:1.5"><b>Zero history, zero profiling, zero ads-tracking</b> until a verified parent approves — however long that takes.</p>
+        </div>
+      </section>
+
+      <!-- C2b handover (edge: single-phone household) -->
+      <section class="scr handover" id="c2b">
+        <div class="big">🤝</div>
+        <h2>Hand the phone to your parent</h2>
+        <p class="sub">Aarav, your part is done. The next screens are for your parent only — they'll verify and choose, then hand the phone back.<span class="hindi" style="color:#9fdbda">अब फ़ोन मम्मी-पापा को दें।</span></p>
+        <button class="btn" style="max-width:240px" onclick="handoverDone()">I'm the parent — continue →</button>
+      </section>
+
+      <!-- C3 waiting / safe mode -->
+      <section class="scr" id="c3">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">SAFE MODE</span></div>
+        <div class="wait-banner">⏳ <b>Request sent to Mummy</b><span class="dots"></span> Enjoy Safe Mode — zero data collected while you wait.</div>
+        <div class="vidgrid">
+          <div class="vid"><div class="th">🧪</div><div class="vt">Class 9 Physics — Motion one-shot</div></div>
+          <div class="vid"><div class="th">🏏</div><div class="vt">Best catches — Cricket highlights</div></div>
+          <div class="vid"><div class="th">🚀</div><div class="vt">ISRO explained in 10 minutes</div></div>
+          <div class="vid"><div class="th">🎨</div><div class="vt">Draw anime eyes — beginner</div></div>
+        </div>
+        <button class="btn ghost small" onclick="edgeNoResponse()">🧪 Edge-Case Lab: simulate 7 days, no response</button>
+      </section>
+
+      <!-- C3b request expired (edge: parent unreachable) -->
+      <section class="scr" id="c3b">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">SAFE MODE</span></div>
+        <h2>No reply yet — that's okay</h2>
+        <p class="sub">Your request expired after 7 days. Nothing bad happens: Safe Mode simply continues. You're never locked out because an adult was busy.</p>
+        <div class="card"><span class="badge wait">⏳ Request #CR-7841 expired</span><span class="badge safe">▶ Safe Mode continues — forever if needed</span></div>
+        <button class="btn" onclick="resendRequest()">🔁 Resend to Mummy</button>
+        <button class="btn ghost" onclick="resendRequest(true)">Add another guardian (Papa) instead</button>
+      </section>
+
+      <!-- C3c declined (edge: parent says no) -->
+      <section class="scr" id="c3c">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">SAFE MODE</span></div>
+        <div class="checkanim" style="background:var(--goldt);color:#9a6b1f">💛</div>
+        <h2 style="text-align:center">Mummy said "not yet"</h2>
+        <p class="sub" style="text-align:center">And that's completely fine. Safe Mode stays on — you can still watch curated videos. You can ask again after 30 days.<span class="hindi">"ना" भी एक जवाब है — और सेफ मोड चलता रहेगा।</span></p>
+        <div class="card"><span class="badge safe">▶ Safe Mode: ON</span><span class="badge wait">🔁 Can re-ask: in 30 days</span><span class="badge ok">🚫 Zero data collected</span></div>
+        <button class="btn ghost" onclick="reAsk()">⏩ Simulate: 30 days later — ask again</button>
+      </section>
+
+      <!-- C4 approved -->
+      <section class="scr" id="c4">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">AARAV · 14</span></div>
+        <div class="checkanim">✓</div>
+        <h2 style="text-align:center">Mummy said yes! 🎉</h2>
+        <p class="sub" style="text-align:center">Account fully active — the safe way.</p>
+        <div class="card">
+          <span class="badge ok" id="bWatch">✓ Watch history ON</span>
+          <span class="badge ok" id="bReco">✓ Recommendations ON</span>
+          <span class="badge safe">🔒 Ad profiling OFF (by law)</span>
+          <span class="badge wait">⏳ Renews in 365 days</span>
+        </div>
+        <button class="btn red" onclick="toHub()">Open Mera Data Hub →</button>
+      </section>
+
+      <!-- C4b revoked (edge: parent withdraws mid-year) -->
+      <section class="scr" id="c4b">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">SAFE MODE</span></div>
+        <h2>Mummy paused your account</h2>
+        <p class="sub">Consent was withdrawn — processing stopped within 24 hours. Nothing is deleted yet: your data is <b>frozen for 30 days</b> in case Mummy changes her mind, then erased.</p>
+        <div class="card"><span class="badge wait">⏸ History & recommendations paused</span><span class="badge wait">🧊 Data frozen · auto-delete in 30 days</span><span class="badge safe">▶ Safe Mode still works</span></div>
+        <button class="btn ghost" onclick="reGrant()">⏩ Simulate: Mummy re-grants consent</button>
+      </section>
+
+      <!-- C5 data hub -->
+      <section class="scr" id="c5">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">MERA DATA HUB</span></div>
+        <h2>Mera Data Hub</h2>
+        <p class="sub">Every DPDP right, working — try them.<span class="hindi">हर अधिकार — यहीं, अभी।</span></p>
+        <div class="card" style="padding:2px 11px">
+          <div class="hubrow" onclick="seeData()"><div class="hubic">👀</div><div><div class="hubt">See my data</div><div class="hubd">Plain-language summary</div></div><span class="chev">›</span></div>
+          <div class="hubrow" onclick="downloadData()"><div class="hubic">⬇️</div><div><div class="hubt">Download my data</div><div class="hubd">Real JSON file — it actually downloads</div></div><span class="chev">›</span></div>
+          <div class="hubrow" onclick="eraseData()"><div class="hubic">🗑️</div><div><div class="hubt">Erase my watch history</div><div class="hubd">Watch the 72-hour SLA run live</div></div><span class="chev">›</span></div>
+          <div class="hubrow" onclick="legalHold()"><div class="hubic">⚖️</div><div><div class="hubt">Delete my account</div><div class="hubd">Edge case: one item is under legal hold</div></div><span class="chev">›</span></div>
+        </div>
+        <div class="sla" id="slabox" style="display:none">⏱ Erasure <b>#ER-2041</b> · SLA: <span class="slatimer" id="slat">72:00:00</span> <span id="slamsg"></span></div>
+        <div class="card warn" id="holdbox" style="display:none"><p style="font-size:10.5px;line-height:1.55;color:#9a6b1f"><b>⚖️ Honest deletion status:</b> account & history — <b>deleted now</b>. One purchase record must be kept until <b>Mar 2027</b> (tax law). It's sealed, unused, and will auto-purge. We never fake a deletion.</p></div>
+        <div class="card hero" id="seebox" style="display:none"><p style="font-size:10.5px;color:var(--txt);line-height:1.6"><b>What YouTube holds about Aarav:</b><br>· Name, age band (13–15), language<br>· Watch history: 14 videos (18-month auto-delete)<br>· Ad profile: <b style="color:var(--teald)">none — barred for minors</b><br>· Consent: granted by Priya S. (verified parent)</p></div>
+        <button class="btn ghost small" onclick="fastForward()" id="ffbtn">⏩ Simulate: 1 year later (consent expiry)</button>
+        <button class="btn ghost small" onclick="turn18()" id="btn18">⏩ Simulate: Aarav turns 18 🎂</button>
+      </section>
+
+      <!-- C6 expired -->
+      <section class="scr" id="c6">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">SAFE MODE</span></div>
+        <h2>One year later…</h2>
+        <div class="wait-banner">🔁 <b>Consent expired.</b> After a 7-day grace of nudges, Aarav drops to Safe-Mode pause — watching continues, collection stops. A 1-tap renewal is on Priya's phone →</div>
+        <div class="card"><span class="badge wait">⏸ History paused</span><span class="badge wait">⏸ Recommendations paused</span><span class="badge safe">🔒 Ads still off</span></div>
+        <div class="card"><p style="font-size:10.5px;color:var(--mut);line-height:1.5">No lockout → no fake-birthday incentive. A lapsed consent pauses <b>data</b>, not the child.</p></div>
+      </section>
+
+      <!-- C7 turned 18 (edge: majority migration) -->
+      <section class="scr" id="c7">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">AARAV · 18 🎂</span></div>
+        <div class="checkanim">🎂</div>
+        <h2 style="text-align:center">Happy 18th, Aarav</h2>
+        <p class="sub" style="text-align:center">You're an adult now — so <b>you</b> decide. Mummy's controls have ended (she's been told, kindly). Your history carries over <b>only if you re-consent</b> — otherwise it's deleted.</p>
+        <div class="card"><span class="badge ok">👤 Self-consent unlocked</span><span class="badge wait">👩 Parental controls ended</span></div>
+        <button class="btn" onclick="majorityKeep()">Keep my history — I consent ✓</button>
+        <button class="btn ghost" onclick="majorityFresh()">Start fresh — delete it all</button>
+      </section>
+
+      <!-- C8 final -->
+      <section class="scr" id="c8">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip">LIFECYCLE ✓</span></div>
+        <div class="checkanim">🏁</div>
+        <h2 style="text-align:center">Full lifecycle complete</h2>
+        <p class="sub" style="text-align:center" id="finalsub">Sign-up → verified consent → rights exercised → expiry → renewal. Check your Edge-Case Lab score →</p>
+        <div class="card" id="finalbadges">
+          <span class="badge ok">✓ Consent renewed</span>
+          <span class="badge ok">✓ Erasure in SLA</span>
+          <span class="badge safe">🔒 0 ad-profile events, ever</span>
+        </div>
+        <button class="btn ghost" onclick="location.reload()">↺ Replay entire simulation</button>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= PARENT PHONE ================= -->
+  <div class="phonecol">
+    <div class="who"><div class="av">👩</div><div><div class="nm">Priya's phone</div><div class="rl">PARENT · LEGAL CONSENT-GIVER</div></div><div class="heartbeat" id="hbPar">STATUS: IDLE</div></div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="smstoast" id="sms">💬 <b>SMS · YT-SAHAMATI:</b> Your one-time code is <b id="smscode"></b>. Valid 10 min. Never share it.</div>
+
+      <!-- P1 lock -->
+      <section class="scr lock on" id="p1">
+        <div class="time" id="clock">7:42</div>
+        <div class="date">Saturday, 5 July</div>
+        <div id="notifslot"></div>
+        <div class="idlehint" id="idlehint">Priya's phone is idle.<br>Waiting for something to happen…</div>
+      </section>
+
+      <!-- P2 request detail -->
+      <section class="scr" id="p2">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip parent" id="p2chip">PRIYA · PARENT</span></div>
+        <div class="card hero" style="display:flex;gap:9px;align-items:center"><div style="font-size:23px">🧒</div><div><div style="font-size:12px;font-weight:700;color:var(--txt)"><span id="reqName">Aarav</span> (14) wants your approval</div><div style="font-size:10px;color:var(--mut)">Expires in 7 days · you can decline — he keeps Safe Mode either way</div></div></div>
+        <h2>Verify it's you</h2>
+        <p class="sub">Once a year, one step. We confirm <b>only that you're an adult</b>. <b>YouTube stores no documents.</b> If OTP fails, DigiLocker works; if both fail, assisted video-verify exists.<span class="hindi">कोई दस्तावेज़ YouTube के पास नहीं रहेगा।</span></p>
+        <button class="btn" onclick="sendOtp()">Send OTP to this phone</button>
+        <button class="btn ghost" onclick="sendOtp()">Use DigiLocker age-token instead</button>
+      </section>
+
+      <!-- P3 otp -->
+      <section class="scr" id="p3">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip parent" id="p3chip">PRIYA · PARENT</span></div>
+        <h2>Enter the code</h2>
+        <p class="sub">We texted a 4-digit code to this phone (SMS above ↑).</p>
+        <div class="card hero">
+          <div class="otp" id="otpbox">
+            <input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric">
+          </div>
+          <div style="font-size:9.5px;color:var(--mut)">Reviewer tip: code is in the SMS toast · or tap auto-fill</div>
+        </div>
+        <button class="btn" onclick="checkOtp()">Verify →</button>
+        <button class="btn ghost" onclick="autofill()">✨ Auto-fill (demo)</button>
+      </section>
+
+      <!-- P4 notice -->
+      <section class="scr" id="p4">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip parent" id="p4chip">PRIYA · PARENT</span></div>
+        <h2 data-en="Your choices for Aarav" data-hi="आरव के लिए आपके विकल्प">Your choices for Aarav</h2>
+        <p class="sub"><span data-en="Plain words. Each switch is separate — approve only what you're okay with. Saying no is fine too." data-hi="सीधी भाषा। हर स्विच अलग है — 'ना' कहना भी ठीक है।">Plain words. Each switch is separate — approve only what you're okay with. Saying no is fine too.</span></p>
+        <div class="langchips">
+          <span class="lc on" onclick="setLang('en',this)">English</span>
+          <span class="lc" onclick="setLang('hi',this)">हिन्दी</span>
+          <span class="lc" style="cursor:default">+ 20 more</span>
+        </div>
+        <div class="card" style="padding:2px 11px">
+          <div class="trow"><div style="flex:1"><div class="tt" data-en="Watch history" data-hi="देखने का इतिहास">Watch history</div><div class="td" data-en="Lets Aarav resume videos. Auto-deleted after 18 months." data-hi="वीडियो वहीं से देखें। 18 महीने बाद खुद मिट जाएगा।">Lets Aarav resume videos. Auto-deleted after 18 months.</div></div><button class="sw on" id="swWatch" onclick="this.classList.toggle('on')"></button></div>
+          <div class="trow"><div style="flex:1"><div class="tt" data-en="Recommendations" data-hi="सुझाव">Recommendations</div><div class="td" data-en="Suggests study & hobby videos. Never uses location." data-hi="पढ़ाई व शौक के वीडियो। लोकेशन कभी नहीं।">Suggests study & hobby videos. Never uses location.</div></div><button class="sw on" id="swReco" onclick="this.classList.toggle('on')"></button></div>
+          <div class="trow"><div style="flex:1"><div class="tt" data-en="Personalised ads & tracking" data-hi="विज्ञापन प्रोफ़ाइल व ट्रैकिंग">Personalised ads & tracking</div><div class="locknote" data-en="🔒 Permanently OFF for under-18s — not a choice we offer" data-hi="🔒 18 से कम के लिए हमेशा बंद — विकल्प ही नहीं">🔒 Permanently OFF for under-18s — not a choice we offer</div></div><button class="sw locked" disabled></button></div>
+        </div>
+        <button class="btn" onclick="approve()" data-en="Approve these choices ✓" data-hi="इन विकल्पों को मंज़ूरी दें ✓">Approve these choices ✓</button>
+        <button class="btn warn small" onclick="decline()" data-en="Not yet — decline for now" data-hi="अभी नहीं — फ़िलहाल मना करें">Not yet — decline for now</button>
+      </section>
+
+      <!-- P4b declined confirm -->
+      <section class="scr" id="p4b">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip parent">PRIYA · PARENT</span></div>
+        <div class="checkanim" style="background:var(--goldt);color:#9a6b1f">💛</div>
+        <h2 style="text-align:center">Declined — and that's okay</h2>
+        <p class="sub" style="text-align:center">Aarav keeps Safe Mode (curated videos, zero data). He's been told gently — no blame, no lockout. He can re-ask after 30 days, and you can change your mind anytime.</p>
+        <div class="card"><span class="badge safe">▶ His Safe Mode continues</span><span class="badge ok">🚫 Zero data collected</span></div>
+      </section>
+
+      <!-- P5 done / control centre -->
+      <section class="scr" id="p5">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip parent">PRIYA · PARENT</span></div>
+        <div class="checkanim">✓</div>
+        <h2 style="text-align:center">Done. You're in control.</h2>
+        <p class="sub" style="text-align:center">Aarav's account just went live on his phone ←</p>
+        <div class="card"><p style="font-size:10.5px;color:var(--mut);line-height:1.6">📬 Monthly summary of Aarav's settings<br>🎚 Change any switch, anytime, right here<br>🗓 1-tap renewal next year — consent isn't forever</p></div>
+        <button class="btn warn small" onclick="revoke()">🧪 Edge-Case Lab: withdraw consent now</button>
+      </section>
+
+      <!-- P6 renewal -->
+      <section class="scr lock" id="p6">
+        <div class="time">7:42</div>
+        <div class="date">Sunday, 4 July · one year later</div>
+        <div class="notif" onclick="renew()">
+          <div class="nh"><span class="ytplay" style="transform:scale(.8)"></span> YOUTUBE SAHAMATI · now</div>
+          <div class="nt">Aarav's consent expires today 🔁</div>
+          <div class="nd">Same choices as last year (ads still off by law). Tap to renew in one tap.</div>
+        </div>
+      </section>
+
+      <!-- P7 renewed / majority notice -->
+      <section class="scr" id="p7">
+        <div class="ythead"><div class="ytlogo"><span class="ytplay"></span>YouTube</div><span class="chip parent">PRIYA · PARENT</span></div>
+        <div class="checkanim" id="p7icon">🔁</div>
+        <h2 style="text-align:center" id="p7title">Renewed for 2027–28</h2>
+        <p class="sub" style="text-align:center" id="p7sub">One tap. That's what respectful renewal feels like.</p>
+        <div class="card" id="p7card"><span class="badge ok">✓ Same choices carried over</span><span class="badge safe">🔒 Ads off — always</span></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= RIGHT COLUMN ================= -->
+  <div class="rightcol">
+    <div class="ledger">
+      <div class="lh"><span class="reclight"></span><div><div class="lt">Live Consent Ledger</div><div class="ls">REGULATOR VIEW · APPEND-ONLY · DPDP AUDIT TRAIL</div></div></div>
+      <div class="lstats">
+        <div class="lstat"><div class="n" id="stEvents">0</div><div class="l">EVENTS</div></div>
+        <div class="lstat"><div class="n okc" id="stConsent">NO</div><div class="l">VALID CONSENT</div></div>
+        <div class="lstat"><div class="n" id="stData">0 KB</div><div class="l">CHILD DATA</div></div>
+        <div class="lstat"><div class="n okc">0</div><div class="l">AD-PROFILE EVENTS</div></div>
+      </div>
+      <div class="lbody" id="lbody">
+        <div class="lempty">Nothing yet. The moment Aarav acts, events appear here — timestamped, hashed, append-only. This is the audit trail a Significant Data Fiduciary must produce for the Data Protection Board.</div>
+      </div>
+      <div class="lfoot">Consent you can prove is consent that protects both the child <i>and</i> the company.</div>
+    </div>
+
+    <div class="lab">
+      <div class="labh"><div><div class="lt">🧪 Edge-Case Lab</div><div class="ls">CAN YOU BREAK IT? · 8 UNHAPPY PATHS, ALL HANDLED</div></div><div class="score"><span id="labScore">0</span>/8</div></div>
+      <div class="labitems">
+        <div class="labi" id="lab-decline"><span class="tick">✓</span><span><b>Parent declines</b> — child keeps Safe Mode, re-ask in 30 days, no punishment</span></div>
+        <div class="labi" id="lab-noresp"><span class="tick">✓</span><span><b>Parent never replies (7 days)</b> — request expires, resend / alternate guardian</span></div>
+        <div class="labi" id="lab-samedev"><span class="tick">✓</span><span><b>Single-phone family</b> — hand-over flow, parent consents on the child's device</span></div>
+        <div class="labi" id="lab-adult"><span class="tick">✓</span><span><b>Adult DOB typed</b> — adult path + background age-assurance safety net</span></div>
+        <div class="labi" id="lab-susp"><span class="tick">✓</span><span><b>Faked age caught</b> — minor-like signals → soft pause to Safe Mode, quick proof to exit</span></div>
+        <div class="labi" id="lab-revoke"><span class="tick">✓</span><span><b>Consent withdrawn mid-year</b> — stops &lt;24h, data frozen 30 days, undo window</span></div>
+        <div class="labi" id="lab-hold"><span class="tick">✓</span><span><b>Delete vs legal hold</b> — honest "deleted-with-legal-hold" status, never fake it</span></div>
+        <div class="labi" id="lab-major"><span class="tick">✓</span><span><b>Child turns 18</b> — self-consent takeover, history carries only on re-consent</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Sahamati Live v3 — dual-phone DPDP consent simulator + Edge-Case Lab */
+let OTP = "";
+let dataKB = 0;
+let evCount = 0;
+let approvedAt = null;
+let sameDev = false;
+let labHits = new Set();
+
+const guides = {
+  c1: "Aarav's phone: check the <b>date of birth</b> — try an adult year too, both paths work — then <b>continue</b>.",
+  c1b: "Adult path unlocked. Notice the <b>age-assurance safety net</b> card — or trigger the 🧪 lab button to see the faked-age net catch a minor.",
+  c2: "Aarav's phone: <b>send the request</b> to Priya's phone — or try <b>🤝 We share this phone</b> (single-phone India).",
+  c2b: "Single-phone flow: Aarav hands the device over. Tap <b>I'm the parent</b> to continue on the same phone.",
+  p1n: "Priya's phone buzzed — <b>tap the notification</b> on her lock screen.",
+  p2: "Priya's phone: pick <b>Send OTP</b> (or DigiLocker). Note the fallback ladder for when OTP fails.",
+  p3: "Type the 4-digit code from the SMS toast (or <b>Auto-fill</b>), then <b>Verify</b>.",
+  p4: "Flip switches, try <b>हिन्दी</b>, see ads <b>locked off</b> — then <b>Approve</b>… or be a tough parent and <b>decline</b> 🧪.",
+  c3: "Aarav waits in Safe Mode. Impatient? Trigger 🧪 <b>7 days, no response</b> to see the unreachable-parent path.",
+  c3b: "Request expired, child unharmed. <b>Resend</b> or add an <b>alternate guardian</b>.",
+  c3c: "Declined — and the product stays kind. Tap <b>⏩ 30 days later</b> to re-ask.",
+  c4: "Approved! Aarav's phone unlocked instantly ← open <b>Mera Data Hub</b>.",
+  c4b: "Consent withdrawn: processing stopped, data frozen 30 days. Tap <b>re-grant</b> to undo.",
+  c5: "Try every right: <b>Download</b> (real JSON!) · <b>Erase</b> (live SLA) · <b>Delete account</b> (legal hold) — then ⏩ <b>1 year later</b> or 🎂 <b>turns 18</b>.",
+  p5: "Priya's control centre. Brutal test: tap 🧪 <b>withdraw consent</b> and watch Aarav's phone.",
+  p6: "One year later — consent expired. <b>Tap the renewal notification</b> on Priya's phone.",
+  c7: "Aarav is 18: parental controls ended. His data, his call — <b>keep with re-consent</b> or <b>start fresh</b>.",
+  done: "🏁 Lifecycle complete. Ledger = your audit trail. Lab score = the edge cases you survived. Try a replay and break it another way."
+};
+function guide(k){ document.getElementById("guidetext").innerHTML = guides[k] || ""; }
+
+function life(n){
+  document.querySelectorAll(".life").forEach(el=>{
+    const i = +el.dataset.l;
+    el.classList.toggle("now", i===n);
+    el.classList.toggle("done", i<n);
+  });
+}
+const CHILD_SCREENS = ["c1","c1b","c2","c2b","c3","c3b","c3c","c4","c4b","c5","c6","c7","c8"];
+const PARENT_SCREENS = ["p1","p2","p3","p4","p4b","p5","p6","p7"];
+function show(phone, id){
+  (phone==="c"?CHILD_SCREENS:PARENT_SCREENS).forEach(s=>document.getElementById(s).classList.remove("on"));
+  const el = document.getElementById(id);
+  el.classList.add("on"); el.scrollTop = 0;
+}
+function hb(which, txt, off){
+  const el = document.getElementById(which==="c"?"hbChild":"hbPar");
+  el.textContent = txt; el.classList.toggle("offp", !!off);
+}
+function lab(id){
+  if(labHits.has(id)) return;
+  labHits.add(id);
+  const el = document.getElementById("lab-"+id);
+  if(el) el.classList.add("hit");
+  document.getElementById("labScore").textContent = labHits.size;
+}
+
+/* ---------- ledger ---------- */
+function hash(){ return "0x" + Math.random().toString(16).slice(2,8) + Math.random().toString(16).slice(2,6); }
+function log(icon, ev, detail){
+  const body = document.getElementById("lbody");
+  const empty = body.querySelector(".lempty"); if(empty) empty.remove();
+  const t = new Date();
+  const ts = t.toLocaleTimeString("en-IN",{hour12:false}) + "." + String(t.getMilliseconds()).padStart(3,"0");
+  const div = document.createElement("div");
+  div.className = "lentry";
+  div.innerHTML = `<div class="lic">${icon}</div><div style="min-width:0"><div class="lev">${ev}</div><div class="lde">${detail}</div><div class="lhash">${hash()}</div></div><div class="lts">${ts}<br>IST</div>`;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  evCount++; document.getElementById("stEvents").textContent = evCount;
+}
+function setConsent(v){ document.getElementById("stConsent").textContent = v; }
+function setData(kb){ dataKB=kb; document.getElementById("stData").textContent = kb + " KB"; }
+
+/* ---------- signup / age ---------- */
+const dobInput = document.getElementById("inDob");
+function calcAge(){
+  const d = new Date(dobInput.value); if(isNaN(d)) return null;
+  const now = new Date("2026-07-05");
+  let a = now.getFullYear()-d.getFullYear();
+  const m = now.getMonth()-d.getMonth();
+  if(m<0 || (m===0 && now.getDate()<d.getDate())) a--;
+  return a;
+}
+function paintAge(){
+  const a = calcAge(); if(a===null) return;
+  const card = document.getElementById("ageCard");
+  card.style.display = "block";
+  const minor = a < 18;
+  document.getElementById("ageTxt").textContent = minor ? `Under 18 detected — age ${a}` : `Adult — age ${a}`;
+  document.getElementById("ageDesc").innerHTML = minor
+    ? "By law (DPDP §9), a parent must approve before we process your data. You'll start in <b>Safe Mode</b> right away — no waiting around."
+    : "You'll consent for yourself — but note: <b>age-assurance signals keep running</b>, so faking an adult birthday doesn't stick.";
+  document.getElementById("btnC1").textContent = minor ? "Continue as a young viewer →" : "Continue as an adult →";
+}
+dobInput.addEventListener("input", paintAge);
+
+function c1next(){
+  paintAge();
+  const a = calcAge();
+  const name = document.getElementById("inName").value || "Aarav";
+  if(a >= 18){
+    log("🧑","AGE_SELF_DECLARED_ADULT",`DOB says ${a}. Adult self-consent path opened — with background age-assurance armed (content mix, usage-hour patterns).`);
+    show("c","c1b"); guide("c1b"); lab("adult");
+    hb("c","ADULT PATH · AGE-ASSURANCE ARMED");
+    return;
+  }
+  log("👶","AGE_DETERMINED",`${name}, age ${a} → classified minor. Zero personal-data processing started. Basis: DPDP §9.`);
+  show("c","c2"); guide("c2");
+}
+function adultProceed(){
+  log("📝","ADULT_SELF_CONSENT","Adult consented for self. Purposes logged. (Demo continues on the minor journey — restart to replay.)");
+  alert("Adult path complete for this demo. Restarting to the minor journey — the heart of this case study.");
+  restartToChild();
+}
+function restartToChild(){
+  dobInput.value = "2012-03-14"; paintAge();
+  show("c","c1"); guide("c1"); hb("c","DATA COLLECTION: NONE");
+}
+function edgeSuspicion(){
+  lab("susp");
+  log("🕵️","AGE_ASSURANCE_FLAG","Minor-like signals detected on self-declared adult account (school-hour usage, kids-content mix). Account softly paused → Safe Mode. Exit: 2-min DigiLocker age proof. No shaming, no deletion.");
+  hb("c","PAUSED · AGE PROOF PENDING", true);
+  alert("🧪 Edge case caught: the account is now softly paused into Safe Mode pending a quick age proof — the 'second net' behind the age gate.\n\nRestarting to the honest minor flow.");
+  restartToChild();
+}
+
+/* ---------- request paths ---------- */
+function sendRequest(){
+  sameDev = false;
+  const num = document.getElementById("inParent").value || "parent";
+  const name = document.getElementById("inName").value || "Aarav";
+  document.getElementById("reqName").textContent = name.split(" ")[0];
+  // reset parent phone to lock screen (handles resend after decline/expiry)
+  show("p","p1");
+  document.getElementById("notifslot").innerHTML = "";
+  document.getElementById("idlehint").style.display = "block";
+  hb("p","STATUS: IDLE");
+  log("📩","CONSENT_REQUEST_SENT",`Request #CR-7841 → guardian at ${num}. Anti-fraud: SIM tenure + name-match checks queued; step-up verification if signals are weak.`);
+  show("c","c3"); guide("c3");
+  hb("c","SAFE MODE · 0 EVENTS TRACKED");
+  life(1);
+  setTimeout(()=>{
+    document.getElementById("idlehint").style.display="none";
+    document.getElementById("notifslot").innerHTML = `<div class="notif" onclick="openReq()">
+      <div class="nh"><span class="ytplay" style="transform:scale(.8)"></span> YOUTUBE SAHAMATI · now</div>
+      <div class="nt">${document.getElementById("reqName").textContent} (14) is asking for your approval</div>
+      <div class="nd">A child account needs your consent before any data is processed. Takes ~2 minutes. Declining is okay too.</div></div>`;
+    hb("p","🔔 1 NEW REQUEST");
+    guide("p1n");
+  }, 900);
+}
+function sameDevice(){
+  sameDev = true; lab("samedev");
+  log("🤝","SAME_DEVICE_MODE","Single-phone household path chosen. Hand-over flow: parent verifies & consents on the child's device; child session sandboxed during hand-over.");
+  show("c","c2b"); guide("c2b");
+  life(1);
+}
+function handoverDone(){
+  ["p2chip","p3chip","p4chip"].forEach(id=>{ const el=document.getElementById(id); el.textContent="SAME DEVICE · PARENT"; el.classList.add("samedev"); });
+  document.getElementById("reqName").textContent = (document.getElementById("inName").value||"Aarav").split(" ")[0];
+  show("c","c3"); // child phone parked in safe mode behind the scenes
+  hb("c","HANDED OVER · SANDBOXED");
+  show("p","p2"); guide("p2");
+  hb("p","SAME-DEVICE SESSION");
+}
+function edgeNoResponse(){
+  lab("noresp");
+  log("⏰","REQUEST_EXPIRED","7 days, no guardian response. Request #CR-7841 expired. Child unaffected: Safe Mode continues indefinitely. Options offered: resend / alternate guardian.");
+  show("c","c3b"); guide("c3b");
+  document.getElementById("notifslot").innerHTML = "";
+  document.getElementById("idlehint").style.display="block";
+  hb("p","STATUS: IDLE");
+  show("p","p1");
+}
+function resendRequest(alt){
+  log("📩", alt?"ALT_GUARDIAN_REQUEST":"CONSENT_REQUEST_RESENT", alt?"New request routed to alternate lawful guardian (Papa). One child, many guardians — any one valid approval works.":"Request re-sent to same guardian with a fresh 7-day window.");
+  sendRequest();
+}
+function reAsk(){
+  log("🔁","RE_REQUEST_AFTER_COOLDOWN","30-day cooldown elapsed. Child re-asked; guardian notified afresh. Cooldown prevents nag-spam of parents.");
+  sendRequest();
+}
+
+/* ---------- parent verify ---------- */
+function openReq(){ show("p","p2"); guide("p2"); hb("p","REVIEWING REQUEST #CR-7841"); }
+function sendOtp(){
+  OTP = String(Math.floor(1000+Math.random()*9000));
+  document.getElementById("smscode").textContent = OTP;
+  document.getElementById("sms").style.display = "block";
+  show("p","p3"); guide("p3");
+  log("🔐","VERIFICATION_STARTED","Adult check via OTP to Aadhaar-verified SIM. Fallback ladder: DigiLocker age-token → assisted video-verify. Zero documents stored (§6 data minimisation).");
+}
+function autofill(){
+  const ins = document.querySelectorAll("#otpbox input");
+  OTP.split("").forEach((d,i)=> ins[i].value = d);
+}
+document.querySelectorAll("#otpbox input").forEach((inp,i,arr)=>{
+  inp.addEventListener("input",()=>{ if(inp.value && i<3) arr[i+1].focus(); });
+});
+function checkOtp(){
+  const ins = [...document.querySelectorAll("#otpbox input")];
+  const val = ins.map(x=>x.value).join("");
+  if(val !== OTP){ ins.forEach(x=>{x.classList.add("bad"); setTimeout(()=>x.classList.remove("bad"),350);}); return; }
+  document.getElementById("sms").style.display="none";
+  log("✅","PARENT_VERIFIED",`Guardian confirmed adult (OTP match)${sameDev?" · same-device session":""}. Verification token valid 12 months. Only the yes/no proof is kept.`);
+  show("p","p4"); guide("p4"); life(2);
+}
+function setLang(lang, chip){
+  document.querySelectorAll(".lc").forEach(c=>c.classList.remove("on"));
+  chip.classList.add("on");
+  document.querySelectorAll("#p4 [data-en]").forEach(el=>{
+    if(el.childNodes.length && el.firstChild.nodeType===3) el.firstChild.nodeValue = el.dataset[lang];
+    else el.textContent = el.dataset[lang];
+  });
+  log("🌐","NOTICE_LANGUAGE_SET", lang==="hi" ? "Notice rendered in Hindi (1 of 22 scheduled languages, §5(3))." : "Notice rendered in English.");
+}
+
+/* ---------- consent decisions ---------- */
+function approve(){
+  const w = document.getElementById("swWatch").classList.contains("on");
+  const r = document.getElementById("swReco").classList.contains("on");
+  approvedAt = new Date();
+  log("📝","CONSENT_GRANTED",`Purposes — watch history: ${w?"ON":"OFF"} · recommendations: ${r?"ON":"OFF"} · ad-profiling: BARRED (minor). Free, specific, informed, unambiguous (§6). Valid 365 days.${sameDev?" Same-device: phone handed back to child.":""}`);
+  setConsent("YES ✓");
+  show("p","p5"); guide("p5");
+  document.getElementById("bWatch").style.display = w ? "" : "none";
+  document.getElementById("bReco").style.display = r ? "" : "none";
+  show("c","c4"); confetti();
+  hb("c", `HISTORY: ${w?"ON":"OFF"} · ADS PROFILE: OFF`);
+  hb("p", sameDev ? "PHONE RETURNED · IN CONTROL" : "IN CONTROL · SUMMARY ON");
+  setData(w||r ? 12 : 2);
+  life(3);
+}
+function decline(){
+  lab("decline");
+  log("💛","CONSENT_DECLINED","Guardian declined. Child moved to permanent Safe Mode — curated content, zero collection, zero blame. Re-request allowed after 30-day cooldown. Guardian can reverse anytime.");
+  setConsent("DECLINED");
+  show("p","p4b");
+  show("c","c3c"); guide("c3c");
+  hb("c","SAFE MODE · DECLINED · 0 TRACKED");
+  hb("p","DECLINED · CAN REVERSE ANYTIME");
+}
+function revoke(){
+  lab("revoke");
+  log("⛔","CONSENT_REVOKED","Guardian withdrew consent mid-term. Processing stopped <24h. Data frozen 30 days (undo window), then auto-deleted. Withdrawal as easy as grant (§6(4)).");
+  setConsent("REVOKED");
+  show("c","c4b"); guide("c4b");
+  hb("c","PAUSED · DATA FROZEN 30D", true);
+  hb("p","REVOKED · UNDO WINDOW OPEN");
+}
+function reGrant(){
+  log("📝","CONSENT_REGRANTED","Guardian re-granted within the freeze window — data unfrozen, processing resumed with the same purpose set.");
+  setConsent("YES ✓");
+  show("c","c4");
+  show("p","p5");
+  hb("c","HISTORY: ON · ADS PROFILE: OFF");
+  hb("p","IN CONTROL");
+  guide("c4");
+}
+
+/* ---------- rights ---------- */
+function toHub(){ show("c","c5"); guide("c5"); }
+function seeData(){
+  const b = document.getElementById("seebox");
+  b.style.display = b.style.display==="none" ? "block" : "none";
+  log("👀","ACCESS_REQUEST_SERVED","Right to access (§11): plain-language summary rendered instantly, in-app.");
+}
+function downloadData(){
+  const name = document.getElementById("inName").value || "Aarav Sharma";
+  const payload = {
+    export_type: "DPDP_data_portability",
+    generated_at: new Date().toISOString(),
+    data_principal: { name, age_band: "13-15", account_type: "minor_verified_consent" },
+    consent_record: {
+      granted_by: "Priya S. (verified parent)",
+      granted_at: approvedAt ? approvedAt.toISOString() : null,
+      valid_days: 365,
+      purposes: {
+        watch_history: document.getElementById("swWatch").classList.contains("on"),
+        recommendations: document.getElementById("swReco").classList.contains("on"),
+        behavioural_ads: "PERMANENTLY_BARRED_MINOR"
+      }
+    },
+    watch_history_sample: [
+      { title: "Class 9 Physics — Motion one-shot", watched: "2026-07-05" },
+      { title: "ISRO explained in 10 minutes", watched: "2026-07-05" }
+    ],
+    ad_profile: null,
+    note: "Mock export from the Sahamati prototype — demonstrates DPDP data portability."
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "aarav_youtube_data_export.json";
+  a.click();
+  log("⬇️","DATA_EXPORTED","Machine-readable JSON delivered <1s. (Reviewer: check Downloads — it's real.)");
+}
+let slaTicking = false;
+function eraseData(){
+  if(slaTicking) return;
+  slaTicking = true;
+  document.getElementById("slabox").style.display = "block";
+  log("🗑️","ERASURE_REQUESTED","Right to erasure (§12): watch history flagged. SLA clock started — 72h hard limit.");
+  let secs = 72*3600;
+  const t = document.getElementById("slat");
+  const iv = setInterval(()=>{
+    secs -= 6480;
+    if(secs <= 0){
+      clearInterval(iv);
+      t.textContent = "00:00:00";
+      document.getElementById("slamsg").innerHTML = " · <b style='color:#5ec4c2'>ERASED ✓</b>";
+      setData(Math.max(dataKB-10, 2));
+      log("✅","ERASURE_COMPLETED","History destroyed across primary + backups. SLA met. Confirmation shown.");
+      slaTicking = false;
+      return;
+    }
+    const h = String(Math.floor(secs/3600)).padStart(2,"0");
+    const m = String(Math.floor(secs%3600/60)).padStart(2,"0");
+    const s2 = String(secs%60).padStart(2,"0");
+    t.textContent = `${h}:${m}:${s2}`;
+  }, 100);
+}
+function legalHold(){
+  lab("hold");
+  document.getElementById("holdbox").style.display = "block";
+  log("⚖️","ERASURE_WITH_LEGAL_HOLD","Account deletion: product data erased now. 1 purchase record retained until Mar 2027 (tax law) — sealed, unused, honest status shown to user, auto-purge scheduled.");
+}
+
+/* ---------- lifecycle jumps ---------- */
+function fastForward(){
+  log("🗓️","CONSENT_EXPIRED","365 days elapsed. 7-day grace nudges done → processing paused (not deleted). Child in Safe-Mode pause. Renewal issued to guardian.");
+  setConsent("EXPIRED");
+  hb("c","SAFE MODE · COLLECTION PAUSED", true);
+  hb("p","🔔 RENEWAL DUE");
+  show("c","c6"); show("p","p6");
+  guide("p6"); life(4);
+}
+function renew(){
+  log("🔁","CONSENT_RENEWED","Guardian renewed with 1 tap — verification token reused, same purposes carried. Full re-prompt only if purposes had changed. New expiry: Jul 2027.");
+  setConsent("YES ✓");
+  hb("c","HISTORY: ON · ADS PROFILE: OFF");
+  hb("p","IN CONTROL");
+  document.getElementById("p7icon").textContent="🔁";
+  document.getElementById("p7title").textContent="Renewed for 2027–28";
+  document.getElementById("p7sub").textContent="One tap. That's what respectful renewal feels like.";
+  show("p","p7");
+  finale();
+}
+function turn18(){
+  lab("major");
+  log("🎂","MAJORITY_REACHED","Data principal turned 18. Parental consent authority ended by law; guardian notified respectfully. Account frozen pending the new adult's own decision.");
+  setConsent("PENDING (18)");
+  show("c","c7"); guide("c7");
+  document.getElementById("p7icon").textContent="👩";
+  document.getElementById("p7title").textContent="Your controls have ended";
+  document.getElementById("p7sub").textContent="Aarav is 18 — he now decides for himself. Thank you for four years of safe choices.";
+  document.getElementById("p7card").innerHTML = '<span class="badge wait">👤 Aarav is now the consent-giver</span><span class="badge ok">💚 Your job here is done</span>';
+  show("p","p7");
+  hb("p","CONTROLS ENDED · NOTIFIED");
+  hb("c","AWAITING SELF-CONSENT");
+  life(5);
+}
+function majorityKeep(){
+  log("📝","MAJORITY_SELF_CONSENT","New adult re-consented: history carried over under fresh adult consent. Ads remain OFF (his default choice honoured).");
+  setConsent("YES ✓ (SELF)");
+  hb("c","ADULT · SELF-CONSENTED");
+  finale("Majority migration done: his data, his consent, his rules. Check the Edge-Case Lab score →");
+}
+function majorityFresh(){
+  log("🗑️","MAJORITY_FRESH_START","New adult chose fresh start: all minor-era data deleted. Clean slate under self-consent.");
+  setConsent("YES ✓ (SELF)");
+  setData(0);
+  hb("c","ADULT · FRESH START");
+  finale("Fresh start: minor-era data deleted, adult life begins. Check the Edge-Case Lab score →");
+}
+function finale(msg){
+  if(msg) document.getElementById("finalsub").textContent = msg;
+  show("c","c8"); confetti();
+  guide("done"); life(5);
+  document.querySelector('.life[data-l="5"]').classList.add("done");
+}
+function confetti(){
+  const box = document.getElementById("confetti");
+  const cols = ["#0e7c7b","#e62117","#e8a33d","#5ec4c2","#1c7a3d"];
+  for(let i=0;i<26;i++){
+    const c = document.createElement("div");
+    c.className="cf";
+    c.style.left = (5+Math.random()*90)+"%";
+    c.style.background = cols[i%cols.length];
+    c.style.animationDelay = (Math.random()*0.5)+"s";
+    box.appendChild(c);
+    setTimeout(()=>c.remove(), 2400);
+  }
+}
+
+/* ---------- init ---------- */
+paintAge();
+guide("c1");
+life(0);
+(function tick(){
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    `${d.getHours()%12||12}:${String(d.getMinutes()).padStart(2,"0")}`;
+  setTimeout(tick, 20000);
+})();
+
+</script>
+</body>
+</html>
